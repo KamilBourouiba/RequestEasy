@@ -68,7 +68,59 @@ public class RequestHandler {
         
         task.resume()
     }
+}
+
+public struct RemoteResourceView: View {
+    @State private var image: UIImage?
+    @State private var text: String?
+    private let imageUrlString: String
+    private let urlString: String
     
-    // Additional methods for json and integer types if needed...
+    public init(imageUrl: String, textUrl: String) {
+        self.imageUrlString = imageUrl
+        self.urlString = textUrl
+    }
+    
+    public var body: some View {
+        VStack {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                ProgressView()
+                    .onAppear {
+                        RequestHandler().GET_image(url: imageUrlString) { result in
+                            switch result {
+                            case .success(let fetchedImage):
+                                DispatchQueue.main.async {
+                                    self.image = fetchedImage
+                                }
+                            case .failure(let error):
+                                print("Error fetching image: \(error.localizedDescription)")
+                            }
+                        }
+                    }
+            }
+            
+            if let text = text {
+                Text(text)
+            } else {
+                ProgressView()
+                    .onAppear {
+                        RequestHandler().GET_text(url: urlString) { result in
+                            switch result {
+                            case .success(let fetchedText):
+                                DispatchQueue.main.async {
+                                    self.text = fetchedText
+                                }
+                            case .failure(let error):
+                                print("Error fetching text: \(error.localizedDescription)")
+                            }
+                        }
+                    }
+            }
+        }
+    }
 }
 #endif
