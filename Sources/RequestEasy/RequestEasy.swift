@@ -1,9 +1,6 @@
-#if canImport(UIKit) && !os(watchOS)
-import UIKit
-#endif
 #if os(iOS)
+import UIKit
 import Foundation
-import SwiftUI
 
 public enum ResponseType {
     case image
@@ -70,52 +67,53 @@ public class RequestHandler {
     }
 }
 
-public struct RemoteResourceView: View {
-    @State private var image: UIImage?
-    @State private var text: String?
-    private let imageUrlString: String
-    private let urlString: String
+public struct EasyRequest {
+    private static let handler = RequestHandler()
     
-    public init(imageUrl: String, textUrl: String) {
-        self.imageUrlString = imageUrl
-        self.urlString = textUrl
+    public static func image(_ url: String) -> RemoteResourceView<UIImage> {
+        return RemoteResourceView<UIImage>(url: url) { completion in
+            handler.GET_image(url: url, completion: completion)
+        }
+    }
+    
+    public static func text(_ url: String) -> RemoteResourceView<String> {
+        return RemoteResourceView<String>(url: url) { completion in
+            handler.GET_text(url: url, completion: completion)
+        }
+    }
+}
+
+public struct RemoteResourceView<T>: View {
+    @State private var result: Result<T, Error>?
+    private let url: String
+    private let loadData: (@escaping (Result<T, Error>) -> Void) -> Void
+    
+    public init(url: String, loadData: @escaping (@escaping (Result<T, Error>) -> Void) -> Void) {
+        self.url = url
+        self.loadData = loadData
     }
     
     public var body: some View {
-        VStack {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } else {
-                ProgressView()
-                    .onAppear {
-                        RequestHandler().GET_image(url: imageUrlString) { result in
-                            switch result {
-                            case .success(let fetchedImage):
-                                DispatchQueue.main.async {
-                                    self.image = fetchedImage
-                                }
-                            case .failure(let error):
-                                print("Error fetching image: \(error.localizedDescription)")
-                            }
-                        }
+        Group {
+            if let result = result {
+                switch result {
+                case .success(let value):
+                    if let image = value as? UIImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else if let text = value as? String {
+                        Text(text)
                     }
-            }
-            
-            if let text = text {
-                Text(text)
+                case .failure(let error):
+                    Text("Failed to load: \(error.localizedDescription)")
+                }
             } else {
                 ProgressView()
                     .onAppear {
-                        RequestHandler().GET_text(url: urlString) { result in
-                            switch result {
-                            case .success(let fetchedText):
-                                DispatchQueue.main.async {
-                                    self.text = fetchedText
-                                }
-                            case .failure(let error):
-                                print("Error fetching text: \(error.localizedDescription)")
+                        loadData { result in
+                            DispatchQueue.main.async {
+                                self.result = result
                             }
                         }
                     }
