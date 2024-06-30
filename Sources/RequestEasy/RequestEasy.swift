@@ -1,4 +1,3 @@
-#if os(iOS)
 import UIKit
 import Foundation
 import SwiftUI
@@ -122,4 +121,3 @@ public struct RemoteResourceView<T>: View {
         }
     }
 }
-#endif
