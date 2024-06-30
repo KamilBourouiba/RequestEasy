@@ -1,6 +1,7 @@
 #if os(iOS)
 import UIKit
 import Foundation
+import SwiftUI
 
 public enum ResponseType {
     case image
