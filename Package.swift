@@ -6,10 +6,7 @@ import PackageDescription
 let package = Package(
     name: "RequestEasy",
     platforms: [
-        .iOS(.v15),
-        .macOS(.v12),
-        .watchOS(.v8),
-        .tvOS(.v15)
+        .iOS(.v14), // Adjust the version according to your requirements
     ],
     products: [
         .library(
@@ -17,7 +14,8 @@ let package = Package(
             targets: ["RequestEasy"]),
     ],
     dependencies: [
-        // No dependencies for now
+        // Dependencies declare other packages that this package depends on.
+        // .package(url: /* package url */, from: "1.0.0"),
     ],
     targets: [
         .target(
