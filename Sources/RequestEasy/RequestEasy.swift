@@ -97,4 +97,3 @@ public func GETJson(url: String, key: String? = nil) -> String {
         return "Error fetching data"
     }
 }
-#endif
