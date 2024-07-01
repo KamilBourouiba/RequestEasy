@@ -1,4 +1,3 @@
-import UIKit
 import Foundation
 import SwiftUI
 
@@ -31,15 +30,11 @@ public class RequestHandler {
 
             switch type {
             case .image:
-                #if canImport(UIKit)
                 if let image = UIImage(data: data) {
                     completion(.success(image))
                 } else {
                     completion(.failure(NSError(domain: "Failed to decode image", code: -1, userInfo: nil)))
                 }
-                #else
-                completion(.failure(NSError(domain: "UIImage not available on this platform", code: -1, userInfo: nil)))
-                #endif
 
             case .text:
                 if let text = String(data: data, encoding: .utf8) {
