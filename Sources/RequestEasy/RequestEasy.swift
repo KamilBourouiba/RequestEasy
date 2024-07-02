@@ -88,6 +88,8 @@ public class RequestHandler {
         for key in keys {
             if let dictionary = current as? [String: Any], let value = dictionary[key] {
                 current = value
+            } else if let array = current as? [Any], let index = Int(key), index < array.count {
+                current = array[index]
             } else {
                 return nil
             }
