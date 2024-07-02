@@ -46,8 +46,9 @@ public class RequestHandler {
             case .json:
                 do {
                     let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
-                    if let key = key, let jsonDict = jsonObject as? [String: Any], let value = jsonDict[key] {
-                        completion(.success(value))
+                    if let key = key {
+                        let value = self.getValueForKeyPath(jsonObject, keyPath: key)
+                        completion(.success(value ?? "Key not found"))
                     } else {
                         completion(.success(jsonObject))
                     }
@@ -79,16 +80,64 @@ public class RequestHandler {
         _ = semaphore.wait(timeout: .distantFuture)
         return result!
     }
+
+    private func getValueForKeyPath(_ json: Any, keyPath: String) -> Any? {
+        let keys = keyPath.split(separator: "/").map { String($0) }
+        var current: Any = json
+
+        for key in keys {
+            if let dictionary = current as? [String: Any], let value = dictionary[key] {
+                current = value
+            } else {
+                return nil
+            }
+        }
+
+        return current
+    }
 }
 
-public func GETJson(url: String, key: String? = nil) -> String {
+struct ImageLoader: View {
+    let url: URL
+    @State private var image: UIImage? = nil
+
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                ProgressView()
+                    .onAppear {
+                        loadImage()
+                    }
+            }
+        }
+    }
+
+    private func loadImage() {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data, let uiImage = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self.image = uiImage
+                }
+            }
+        }.resume()
+    }
+}
+
+public func GETJson(url: String, key: String? = nil) -> AnyView {
     let result = RequestHandler().GETSync(url: url, type: .json, key: key)
 
     switch result {
     case .success(let value):
-        return "\(value)"
+        if let urlString = value as? String, let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
+            return AnyView(ImageLoader(url: url))
+        } else {
+            return AnyView(Text("\(value)").padding())
+        }
     case .failure(let error):
-        print("Error fetching JSON: \(error.localizedDescription)")
-        return "Error fetching data"
+        return AnyView(Text("Error fetching data: \(error.localizedDescription)").padding())
     }
 }
